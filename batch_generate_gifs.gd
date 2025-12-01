@@ -105,13 +105,19 @@ func create_planet(type, sd, colors, filename):
 
 	yield(get_tree(), "idle_frame")
 
-	print("Generating GIF %d/%d: %s.gif (this may take 30-60 seconds)..." % [planet_count + 1, planet_count + generation_queue.size() + 1, filename])
+	print("Generating GIF %d/%d: %s.gif (this may take 30-60 seconds)..." % [planet_count + 1, planet_count + generation_queue.size() + 1, sd])
 
-	# Export animated GIF
+	# Export animated GIF - this function uses yields internally
 	gui.export_gif_no_bar(gif_frames, gif_length / gif_frames)
 
-	planet_count += 1
+	# Wait for the export to complete (it yields once per frame plus processing time)
+	# Approximate: gif_frames frames * 0.1 sec per frame + 2 sec processing
+	var wait_time = (gif_frames * 0.1) + 2.0
+	yield(get_tree().create_timer(wait_time), "timeout")
 
-	# Wait longer between GIFs (they take time to generate)
-	yield(get_tree().create_timer(1.0), "timeout")
+	planet_count += 1
+	print("  Saved: %s.gif" % sd)
+
+	# Short pause before next
+	yield(get_tree().create_timer(0.5), "timeout")
 	generate_next()
